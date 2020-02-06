@@ -1,0 +1,1 @@
+printf (“Alô todo mundo”);

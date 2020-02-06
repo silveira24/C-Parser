@@ -4,140 +4,184 @@ local util = require'util'
 
 local parser = [[
     
-    parser                      <-      statement
+    parser                      <-      statement+
 
 
 -- STATEMENTS
 
-    statement                   <-      labeledStatement / compoundStatement / expressionStatement / selectionStatement /
+    statement                   <-      labeledStatement / compoundStatemet / expressionStatement / selectionStatement /
                                         iterationStatement / jumpStatement
 
     labeledStatement            <-      Identifier COLON statement / 
-                                        CASE ConstantExpression COLON Statement /
-                                        DEFAULT COLON Statement
+                                        CASE constantExpression COLON statement /
+                                        DEFAULT COLON statement
 
-    Identifier                  <-      !Keyword IdNondigit IdChar*
+    compoundStatemet            <-      LWING ( declaration / statement )* RWING
 
-    ConstantExpression          <-      ConditionalExpression
+    expressionStatement         <-      expression? SEMI
 
-    ConditionalExpression       <-      LogicalORExpression (QUERY Expression COLON LogicalORExpression)*
+    selectionStatement          <-      IF LPAR expression RPAR statement ( ELSE statement)? /
+                                        SWITCH LPAR expression RPAR statement
 
-    LogicalORExpression         <-      LogicalANDExpression (OROR LogicalANDExpression)*
+    iterationStatement          <-      WHILE LPAR expression RPAR statement /
+                                        DO statement WHILE LPAR expression RPAR SEMI /
+                                        FOR LPAR expression? SEMI expression? SEMI expression? RPAR statement /
+                                        FOR LPAR declaration expression? SEMI expression? RPAR statement
 
-    LogicalANDExpression        <-      InclusiveORExpression (ANDAND InclusiveORExpression)*
+    jumpStatement               <-      GOTO Identifier SEMI /
+                                        CONTINUE SEMI /
+                                        BREAK SEMI / 
+                                        RETURN expression? SEMI                                                                                
 
-    InclusiveORExpression       <-      ExclusiveORExpression (OR ExclusiveORExpression)*
+    declaration                 <-      declarationSpecifiers initDeclaratorList? SEMI 
 
-    ExclusiveORExpression       <-      ANDExpression (HAT ANDExpression)*
+    initDeclaratorList          <-      initDeclarator ( COMMA initDeclarator )*
 
-    ANDExpression               <-      EqualityExpression (AND EqualityExpression)*
+    initDeclarator              <-      declarator ( EQU initializer )?                                     
 
-    EqualityExpression          <-      RelationalExpression ((EQUEQU / BANGEQU) RelationalExpression)*
+    constantExpression          <-      conditionalExpression
 
-    RelationalExpression        <-      ShiftExpression ((LE / GE / LT / GT) ShiftExpression)*
+    conditionalExpression       <-      logicalORExpression (QUERY expression COLON logicalORExpression)*
 
-    ShiftExpression             <-      AdditiveExpression ((LEFT / RIGHT) AdditiveExpression)*
+    logicalORExpression         <-      logicalANDExpression (OROR logicalANDExpression)*
 
-    AdditiveExpression          <-      MultiplicativeExpression ((PLUS / MINUS) MultiplicativeExpression)*
+    logicalANDExpression        <-      inclusiveORExpression (ANDAND inclusiveORExpression)*
 
-    MultiplicativeExpression    <-      CastExpression ((STAR / DIV / MOD) CastExpression)*
+    inclusiveORExpression       <-      exclusiveORExpression (OR exclusiveORExpression)*
 
-    CastExpression              <-      (LPAR TypeName RPAR)* UnaryExpression
+    exclusiveORExpression       <-      andExpression (HAT andExpression)*
 
-    UnaryExpression             <-      PostfixExpression /
-                                        INC UnaryExpression /
-                                        DEC UnaryExpression /
-                                        UnaryOperator CastExpression /
-                                        SIZEOF (UnaryExpression / LPAR TypeName RPAR )
+    andExpression               <-      equalityExpression (AND equalityExpression)*
 
-    UnaryOperator               <-      AND / STAR / PLUS / MINUS / TILDA / BANG                                        
+    equalityExpression          <-      relationalExpression ((EQUEQU / BANGEQU) relationalExpression)*
 
-    PostfixExpression           <-      ( PrimaryExpression /
-                                        LPAR TypeName RPAR LWING InitializerList COMMA? RWING )
-                                        ( LBRK Expression RBRK /
-                                        LPAR ArgumentExpressionList? RPAR /
+    relationalExpression        <-      shiftExpression ((LE / GE / LT / GT) shiftExpression)*
+
+    shiftExpression             <-      additiveExpression ((LEFT / RIGHT) additiveExpression)*
+
+    additiveExpression          <-      multiplicativeExpression ((PLUS / MINUS) multiplicativeExpression)*
+
+    multiplicativeExpression    <-      castExpression ((STAR / DIV / MOD) castExpression)*
+
+    castExpression              <-      (LPAR typeName RPAR)* unaryExpression
+
+    unaryExpression             <-      postfixExpression /
+                                        INC unaryExpression /
+                                        DEC unaryExpression /
+                                        unaryOperator castExpression /
+                                        SIZEOF (unaryExpression / LPAR typeName RPAR )
+
+    unaryOperator               <-      AND / STAR / PLUS / MINUS / TILDA / BANG                                        
+
+    postfixExpression           <-      ( primaryExpression /
+                                        LPAR typeName RPAR LWING initializerList COMMA? RWING )
+                                        ( LBRK expression RBRK /
+                                        LPAR argumentExpressionList? RPAR /
                                         DOT Identifier /
                                         PTR Identifier /
                                         INC /
                                         DEC )*
 
-    TypeName                    <-      SpecifierQualifierList AbstractDeclarator?
+    typeName                    <-      specifierQualifierList abstractDeclarator?
 
-    InitializerList             <-      Designation? Initializer (COMMA Designation? Initializer)*
+    initializerList             <-      designation? initializer (COMMA designation? initializer)*
 
-    Designation                 <-      Designator+ EQU
+    designation                 <-      designator+ EQU
 
-    Designator                  <-      LBRK ConstantExpression RBRK / DOT Identifier
+    designator                  <-      LBRK constantExpression RBRK / DOT Identifier
 
-    Initializer                 <-      AssignmentExpression / LWING InitializerList COMMA? RWING
+    initializer                 <-      assignmentExpression / LWING initializerList COMMA? RWING
 
-    ArgumentExpressionList      <-      AssignmentExpression (COMMA AssignmentExpression)*
+    argumentExpressionList      <-      assignmentExpression (COMMA assignmentExpression)*
 
-    SpecifierQualifierList      <-      ( TypeQualifier* TypedefName TypeQualifier* ) / 
-                                        ( TypeSpecifier / TypeQualifier )+
+    specifierQualifierList      <-      ( typeQualifier* typedefName typeQualifier* ) / 
+                                        ( typeSpecifier / typeQualifier )+
 
-    TypeQualifier               <-      CONST / RESTRICT / VOLATILE / DECLSPEC LPAR Identifier RPAR 
+    typeQualifier               <-      CONST / RESTRICT / VOLATILE / DECLSPEC LPAR Identifier RPAR 
 
-    TypedefName                 <-      Identifier
+    typedefName                 <-      Identifier
 
-    TypeSpecifier               <-      VOID / CHAR / SHORT / INT / LONG / FLOAT / DOUBLE / SIGNED / UNSIGNED /
-                                        BOOL / COMPLEX / StructOrUnionSpecifier / EnumSpecifier
+    typeSpecifier               <-      VOID / CHAR / SHORT / INT / LONG / FLOAT / DOUBLE / SIGNED / UNSIGNED /
+                                        BOOL / COMPLEX / structOrUnionSpecifier / enumSpecifier
 
-    StructOrUnionSpecifier      <-      StructOrUnion ( Identifier? LWING StructDeclaration+ RWING / Identifier ) 
+    structOrUnionSpecifier      <-      structOrUnion ( Identifier? LWING structDeclaration+ RWING / Identifier ) 
 
-    EnumSpecifier               <-      ENUM ( Identifier? LWING EnumeratorList COMMA? RWING / Identifier )
+    enumSpecifier               <-      ENUM ( Identifier? LWING enumeratorList COMMA? RWING / Identifier )
 
-    EnumeratorList              <-      Enumerator (COMMA Enumerator)*
+    enumeratorList              <-      enumerator (COMMA enumerator)*
 
-    Enumerator                  <-      EnumerationConstant (EQU ConstantExpression)?  
+    enumerator                  <-      EnumerationConstant (EQU constantExpression)?  
 
-    StructOrUnion               <-      STRUCT / UNION 
+    structOrUnion               <-      STRUCT / UNION 
 
-    StructDeclaration           <-      SpecifierQualifierList StructDeclaratorList SEMI
+    structDeclaration           <-      specifierQualifierList structDeclaratorList SEMI
 
-    StructDeclaratorList        <-      StructDeclarator (COMMA StructDeclarator)*
+    structDeclaratorList        <-      structDeclarator (COMMA structDeclarator)*
 
-    StructDeclarator            <-      Declarator? COLON ConstantExpression / Declarator    
+    structDeclarator            <-      declarator? COLON constantExpression / declarator    
 
-    Declarator                  <-      Pointer? DirectDeclarator
+    declarator                  <-      pointer? directDeclarator
 
-    Pointer                     <-      ( STAR TypeQualifier* )+
+    pointer                     <-      ( STAR typeQualifier* )+
 
-    DirectDeclarator            <-      ( Identifier / LPAR Declarator RPAR )
-                                        ( LBRK TypeQualifier* AssignmentExpression? RBRK
-                                        / LBRK STATIC TypeQualifier* AssignmentExpression RBRK
-                                        / LBRK TypeQualifier+ STATIC AssignmentExpression RBRK
-                                        / LBRK TypeQualifier* STAR RBRK
-                                        / LPAR ParameterTypeList RPAR
-                                        / LPAR IdentifierList? RPAR )* 
+    directDeclarator            <-      ( Identifier / LPAR declarator RPAR )
+                                        ( LBRK typeQualifier* assignmentExpression? RBRK
+                                        / LBRK STATIC typeQualifier* assignmentExpression RBRK
+                                        / LBRK typeQualifier+ STATIC assignmentExpression RBRK
+                                        / LBRK typeQualifier* STAR RBRK
+                                        / LPAR parameterTypeList RPAR
+                                        / LPAR identifierList? RPAR )* 
 
-    ParameterTypeList           <-      ParameterList (COMMA ELLIPSIS)?  
+    parameterTypeList           <-      parameterList (COMMA ELLIPSIS)?  
 
-    IdentifierList              <-      Identifier (COMMA Identifier)*  
+    identifierList              <-      Identifier (COMMA Identifier)*  
 
-    ParameterList               <-      ParameterDeclaration (COMMA ParameterDeclaration)*
+    parameterList               <-      parameterDeclaration (COMMA parameterDeclaration)*
 
-    ParameterDeclaration        <-      DeclarationSpecifiers ( Declarator / AbstractDeclarator )? 
+    parameterDeclaration        <-      declarationSpecifiers ( declarator / abstractDeclarator )? 
 
-    DeclarationSpecifiers       <-      (( StorageClassSpecifier / TypeQualifier / FunctionSpecifier )*
-                                        TypedefName ( StorageClassSpecifier / TypeQualifier / FunctionSpecifier )*) /
-                                        ( StorageClassSpecifier / TypeSpecifier / TypeQualifier /
-                                        FunctionSpecifier )+  
+    declarationSpecifiers       <-      (( storageClassSpecifier / typeQualifier / functionSpecifier )*
+                                        typedefName ( storageClassSpecifier / typeQualifier / functionSpecifier )*) /
+                                        ( storageClassSpecifier / typeSpecifier / typeQualifier /
+                                        functionSpecifier )+  
 
-    AbstractDeclarator          <-      Pointer? DirectAbstractDeclarator / Pointer 
+    abstractDeclarator          <-      pointer? directAbstractDeclarator / pointer 
     
-    DirectAbstractDeclarator    <-      ( LPAR AbstractDeclarator RPAR /
-                                        LBRK (AssignmentExpression / STAR)? RBRK /
-                                        LPAR ParameterTypeList? RPAR )
-                                        ( LBRK (AssignmentExpression / STAR)? RBRK
-                                        / LPAR ParameterTypeList? RPAR )*                                         
+    directAbstractDeclarator    <-      ( LPAR abstractDeclarator RPAR /
+                                        LBRK (assignmentExpression / STAR)? RBRK /
+                                        LPAR parameterTypeList? RPAR )
+                                        ( LBRK (assignmentExpression / STAR)? RBRK
+                                        / LPAR parameterTypeList? RPAR )*                                         
 
-    StorageClassSpecifier       <-      TYPEDEF / EXTERN / STATIC / AUTO / REGISTER /
-                                        ATTRIBUTE LPAR LPAR (!RPAR _)* RPAR RPAR     
+    storageClassSpecifier       <-      TYPEDEF / EXTERN / STATIC / AUTO / REGISTER /
+                                        ATTRIBUTE LPAR LPAR (!RPAR .)* RPAR RPAR     
 
-    FunctionSpecifier           <-      INLINE / STDCALL                                                                                                          
+    functionSpecifier           <-      INLINE / STDCALL                                                                                                          
 
-    PrimaryExpression           <-      Identifier / Constant / StringLiteral / LPAR Expression RPAR
+    primaryExpression           <-      Identifier / Constant / StringLiteral / LPAR expression RPAR
+
+    expression                  <-      assignmentExpression (COMMA assignmentExpression)*
+
+    assignmentExpression        <-      unaryExpression assignmentOperator assignmentExpression / conditionalExpression
+
+    assignmentOperator          <-      EQU / STAREQU / DIVEQU / MODEQU / PLUSEQU / MINUSEQU / LEFTEQU /
+                                        RIGHTEQU / ANDEQU / HATEQU / OREQU
+
+                                       
+
+-- Lexical Elements 
+
+    StringLiteral               <-      '"' (!'"' .)* '"' / "'" (!"'" .)* "'"
+
+-- Identifiers 
+
+    Identifier                  <-      !Keyword IdNondigit IdChar*
+
+    IdChar                      <-      [a-z] / [A-Z] / [0-9]
+
+    IdNondigit                  <-      [a-z] / [A-Z] 
+
+-- Constants 
 
     Constant                    <-      FloatConstant / IntegerConstant / EnumerationConstant / CharacterConstant
 
@@ -157,14 +201,7 @@ local parser = [[
 
     Char                        <-      [a-z] / [A-Z]
 
-    StringLiteral               <-      '"' (!'"' .)* '"' / "'" (!"'" .)* "'"
-
-    Expression                  <-      AssignmentExpression (COMMA AssignmentExpression)*
-
-    AssignmentExpression        <-      UnaryExpression AssignmentOperator AssignmentExpression / ConditionalExpression
-
-    AssignmentOperator          <-      EQU / STAREQU / DIVEQU / MODEQU / PLUSEQU / MINUSEQU / LEFTEQU /
-                                        RIGHTEQU / ANDEQU / HATEQU / OREQU
+--Keywords
 
     Keyword                     <-      ( "auto" / "break" / "case" / "char" / "const" / "continue" / "default" / "double" /
                                         "do" / "else" / "enum" / "extern" / "float" / "for" / "goto" / "if" / "int" /
@@ -173,104 +210,97 @@ local parser = [[
                                         "void" / "volatile" / "while" / "_Bool" / "_Complex" / "_Imaginary" / "_stdcall" /
                                         "__declspec" / "__attribute__" )  !IdChar
 
-    IdChar                      <-      [a-z] / [A-Z] / [0-9]
 
-    IdNondigit                  <-      [a-z] / [A-Z]                                    
-
-
-
---Keywords
-
-    AUTO      = "auto"     
-    BREAK     = "break"    
-    CASE      = "case"     
-    CHAR      = "char"     
-    CONST     = "const"    
-    CONTINUE  = "continue" 
-    DEFAULT   = "default"  
-    DOUBLE    = "double"   
-    DO        = "do"       
-    ELSE      = "else"     
-    ENUM      = "enum"     
-    EXTERN    = "extern"   
-    FLOAT     = "float"    
-    FOR       = "for"      
-    GOTO      = "goto"     
-    IF        = "if"       
-    INT       = "int"      
-    INLINE    = "inline"   
-    LONG      = "long"     
-    REGISTER  = "register" 
-    RESTRICT  = "restrict" 
-    RETURN    = "return"   
-    SHORT     = "short"    
-    SIGNED    = "signed"   
-    SIZEOF    = "sizeof"   
-    STATIC    = "static"   
-    STRUCT    = "struct"   
-    SWITCH    = "switch"   
-    TYPEDEF   = "typedef"  
-    UNION     = "union"    
-    UNSIGNED  = "unsigned" 
-    VOID      = "void"     
-    VOLATILE  = "volatile" 
-    WHILE     = "while"    
-    BOOL      = "_Bool"    
-    COMPLEX   = "_Complex" 
-    STDCALL   = "_stdcall" 
-    DECLSPEC  = "__declspec"
-    ATTRIBUTE = "__attribute__"
+    AUTO      <- "auto"     
+    BREAK     <- "break"    
+    CASE      <- "case"     
+    CHAR      <- "char"     
+    CONST     <- "const"    
+    CONTINUE  <- "continue" 
+    DEFAULT   <- "default"  
+    DOUBLE    <- "double"   
+    DO        <- "do"       
+    ELSE      <- "else"     
+    ENUM      <- "enum"     
+    EXTERN    <- "extern"   
+    FLOAT     <- "float"    
+    FOR       <- "for"      
+    GOTO      <- "goto"     
+    IF        <- "if"       
+    INT       <- "int"      
+    INLINE    <- "inline"   
+    LONG      <- "long"     
+    REGISTER  <- "register" 
+    RESTRICT  <- "restrict" 
+    RETURN    <- "return"   
+    SHORT     <- "short"    
+    SIGNED    <- "signed"   
+    SIZEOF    <- "sizeof"   
+    STATIC    <- "static"   
+    STRUCT    <- "struct"   
+    SWITCH    <- "switch"   
+    TYPEDEF   <- "typedef"  
+    UNION     <- "union"    
+    UNSIGNED  <- "unsigned" 
+    VOID      <- "void"     
+    VOLATILE  <- "volatile" 
+    WHILE     <- "while"    
+    BOOL      <- "_Bool"    
+    COMPLEX   <- "_Complex" 
+    STDCALL   <- "_stdcall" 
+    DECLSPEC  <- "__declspec"
+    ATTRIBUTE <- "__attribute__"
 
 -- Punctuators
 
-    LBRK       =  "["         
-    RBRK       =  "]"         
-    LPAR       =  "("         
-    RPAR       =  ")"         
-    LWING      =  "{"         
-    RWING      =  "}"         
-    DOT        =  "."         
-    PTR        =  "->"        
-    INC        =  "++"        
-    DEC        =  "--"        
-    AND        =  "&"  !"&" 
-    STAR       =  "*"  !"="   
-    PLUS       =  "+"  !"+="  
-    MINUS      =  "-"  !"\-=>"
-    TILDA      =  "~"         
-    BANG       =  "!"  !"="   
-    DIV        =  "/"  !"="   
-    MOD        =  "%"  !"=>"  
-    LEFT       =  "<<" !"="   
-    RIGHT      =  ">>" !"="   
-    LT         =  "<"  !"="   
-    GT         =  ">"  !"="   
-    LE         =  "<="        
-    GE         =  ">="        
-    EQUEQU     =  "=="        
-    BANGEQU    =  "!="        
-    HAT        =  "^"  !"="   
-    OR         =  "|"  !"="   
-    ANDAND     =  "&&"        
-    OROR       =  "||"        
-    QUERY      =  "?"         
-    COLON      =  ":"  !">"   
-    SEMI       =  ";"         
-    ELLIPSIS   =  "..."       
-    EQU        =  "="  !"="   
-    STAREQU    =  "*="        
-    DIVEQU     =  "/="        
-    MODEQU     =  "%="        
-    PLUSEQU    =  "+="        
-    MINUSEQU   =  "-="        
-    LEFTEQU    =  "<<="       
-    RIGHTEQU   =  ">>="       
-    ANDEQU     =  "&="        
-    HATEQU     =  "^="        
-    OREQU      =  "|="        
-    COMMA      =  ","         
+    LBRK       <-  "["         
+    RBRK       <-  "]"         
+    LPAR       <-  "("         
+    RPAR       <-  ")"         
+    LWING      <-  "{"         
+    RWING      <-  "}"         
+    DOT        <-  "."         
+    PTR        <-  "->"        
+    INC        <-  "++"        
+    DEC        <-  "--"        
+    AND        <-  "&"  !"&" 
+    STAR       <-  "*"  !"="   
+    PLUS       <-  "+"  !"+="  
+    MINUS      <-  "-"  !"\-=>"
+    TILDA      <-  "~"         
+    BANG       <-  "!"  !"="   
+    DIV        <-  "/"  !"="   
+    MOD        <-  "%"  !"=>"  
+    LEFT       <-  "<<" !"="   
+    RIGHT      <-  ">>" !"="   
+    LT         <-  "<"  !"="   
+    GT         <-  ">"  !"="   
+    LE         <-  "<="        
+    GE         <-  ">="        
+    EQUEQU     <-  "=="        
+    BANGEQU    <-  "!="        
+    HAT        <-  "^"  !"="   
+    OR         <-  "|"  !"="   
+    ANDAND     <-  "&&"        
+    OROR       <-  "||"        
+    QUERY      <-  "?"         
+    COLON      <-  ":"  !">"   
+    SEMI       <-  ";"         
+    ELLIPSIS   <-  "..."       
+    EQU        <-  "="  !"="   
+    STAREQU    <-  "*="        
+    DIVEQU     <-  "/="        
+    MODEQU     <-  "%="        
+    PLUSEQU    <-  "+="        
+    MINUSEQU   <-  "-="        
+    LEFTEQU    <-  "<<="       
+    RIGHTEQU   <-  ">>="       
+    ANDEQU     <-  "&="        
+    HATEQU     <-  "^="        
+    OREQU      <-  "|="        
+    COMMA      <-  ","         
 
-    EOT        =  !.                                                                          
+    EOT        <-  !.                                                                          
 
 ]]  
 
@@ -282,7 +312,7 @@ print(g, lab, pos)
 local p = coder.makeg(g)        
 
 local dir = lfs.currentdir() .. '/yes/'
-util.testYes(dir, 'js', p)
+util.testYes(dir, 'c', p)
 
 dir = lfs.currentdir() .. '/no/'
-util.testNo(dir, 'js', p)
+util.testNo(dir, 'c', p)

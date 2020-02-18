@@ -4,7 +4,17 @@ local util = require'util'
 
 local parser = [[
     
-    parser                      <-      statement+
+    parser                      <-      statement+ EOF
+
+-- EXTERNAL DEFINITIONS 
+    
+    translationUnit             <-      Spacing externalDeclaration+ EOT
+
+    externalDeclaration         <-      functionDefinition / declaration 
+
+    functionDefinition          <-      declarationSpecifiers declarator declarationList? compoundStatemet
+
+    declarationList             <-      declaration+
 
 
 -- STATEMENTS
@@ -172,6 +182,16 @@ local parser = [[
 -- Lexical Elements 
 
     StringLiteral               <-      '"' (!'"' .)* '"' / "'" (!"'" .)* "'"
+
+    EOF                         <-      !.
+
+    Spacing                     <-      ( LongComment / LineComment / Pragma )*
+
+    LongComment                 <-      "\*" (!"*\" .)* "*\"
+
+    LineComment                 <-      "//" (!"\n" .)* 
+
+    Pragma                      <-      "#" (!"\n" .)*
 
 -- Identifiers 
 

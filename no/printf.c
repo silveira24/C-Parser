@@ -1,1 +1,3 @@
-printf (“Alô todo mundo”);
+{ printf (   "Alô todo mundo");  
+
+

@@ -1,1 +1,3 @@
-scanf(“%d”, &idade);
+scanf("%d" &idade);
+
+scanf(4 5)

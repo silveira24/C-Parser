@@ -1,1 +1,6 @@
-x = 3;
+int main()
+{
+	x = 3;
+	return 0;
+}
+

@@ -1,10 +1,10 @@
-local m = require 'init'
-local coder = require 'coder'
-local util = require'util'
+local m = require 'pegparser.parser'
+local coder = require 'pegparser.coder'
+local util = require'pegparser.util'
 
 local parser = [[
     
-    parser                      <-      statement+ EOF
+    --parser                      <-      statement+ EOF^ErrEOF
 
 -- EXTERNAL DEFINITIONS 
     
@@ -30,13 +30,13 @@ local parser = [[
 
     expressionStatement         <-      expression? SEMI
 
-    selectionStatement          <-      IF LPAR expression RPAR statement ( ELSE statement)? /
-                                        SWITCH LPAR expression RPAR statement
+    selectionStatement          <-      IF LPAR^ErrIfLPar expression RPAR^ErrIfRPar statement ( ELSE statement)? /
+                                        SWITCH LPAR^ErrSwitchLPar expression RPAR^ErrSwitchRPar statement
 
-    iterationStatement          <-      WHILE LPAR expression RPAR statement /
-                                        DO statement WHILE LPAR expression RPAR SEMI /
-                                        FOR LPAR expression? SEMI expression? SEMI expression? RPAR statement /
-                                        FOR LPAR declaration expression? SEMI expression? RPAR statement
+    iterationStatement          <-      WHILE LPAR^ErrWhileLPar expression RPAR^ErrWhileRPar statement /
+                                        DO statement WHILE^ErrWhileLPar LPAR expression RPAR^ErrWhileRPar SEMI /
+                                        FOR LPAR^ErrForLPar expression? SEMI expression? SEMI expression? RPAR^ErrForRPar statement /
+                                        FOR LPAR^ErrForLPar declaration expression? SEMI expression? RPAR^ErrForRPar statement
 
     jumpStatement               <-      GOTO Identifier SEMI /
                                         CONTINUE SEMI /
@@ -185,13 +185,13 @@ local parser = [[
 
     EOF                         <-      !.
 
-    Spacing                     <-      ( LongComment / LineComment / Pragma )*
+    Spacing                     <-      ( LongComment / LineComment / Pragma / %nl)*
 
     LongComment                 <-      "\*" (!"*\" .)* "*\"
 
-    LineComment                 <-      "//" (!"\n" .)* 
+    LineComment                 <-      "//" (!%nl .)* 
 
-    Pragma                      <-      "#" (!"\n" .)*
+    Pragma                      <-      "#" (!%nl .)*
 
 -- Identifiers 
 
@@ -336,3 +336,7 @@ util.testYes(dir, 'c', p)
 
 dir = lfs.currentdir() .. '/no/'
 util.testNo(dir, 'c', p)
+
+print("\nStrict")
+dir = lfs.currentdir() .. '/no-strict/'
+util.testNo(dir, 'c', p, 'strict')

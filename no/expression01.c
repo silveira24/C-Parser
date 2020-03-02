@@ -1,3 +1,4 @@
+void f ()
 {
 i = 3;
 printf("%d\n", i);

@@ -2,7 +2,7 @@ int main() {
 	
 	int x = 0;
 
-	whilex < 3) {
+	while x < 3) {
 		x += 1;
 	}
 

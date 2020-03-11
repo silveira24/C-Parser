@@ -4,11 +4,10 @@ local util = require'pegparser.util'
 
 local parser = [[
     
-    --parser                      <-      statement+ EOF^ErrEOF
 
 -- EXTERNAL DEFINITIONS 
     
-    translationUnit             <-      Spacing externalDeclaration+ EOT
+    translationUnit             <-      Spacing externalDeclaration+ EOT^ErrEOT
 
     externalDeclaration         <-      functionDefinition / declaration 
 
@@ -16,32 +15,29 @@ local parser = [[
 
     declarationList             <-      declaration+
 
-
--- STATEMENTS
-
-    statement                   <-      labeledStatement / compoundStatemet / expressionStatement / selectionStatement /
+    statement                    <-      labeledStatement / compoundStatemet / expressionStatement / selectionStatement /
                                         iterationStatement / jumpStatement
 
-    labeledStatement            <-      Identifier COLON statement / 
-                                        CASE constantExpression COLON statement /
-                                        DEFAULT COLON statement
+    labeledStatement            <-      Identifier COLON statement^ErrLabeledStatement / 
+                                        CASE constantExpression^ErrCaseExpression COLON^ErrCaseColon statement^ErrCaseStatement /
+                                        DEFAULT COLON^ErrDefaultColon statement^ErrDefaultStatement
 
-    compoundStatemet            <-      LWING ( declaration / statement )* RWING
+    compoundStatemet            <-      LWING ( declaration / statement )* RWING^ErrCompoundRWing
 
     expressionStatement         <-      expression? SEMI
 
-    selectionStatement          <-      IF LPAR^ErrIfLPar expression RPAR^ErrIfRPar statement ( ELSE statement)? /
-                                        SWITCH LPAR^ErrSwitchLPar expression RPAR^ErrSwitchRPar statement
+    selectionStatement          <-      IF LPAR^ErrIfLPar expression^ErrIfExpression RPAR^ErrIfRPar statement^ErrIfStatement ( ELSE statement^ErrElseStatement)? /
+                                        SWITCH LPAR^ErrSwitchLPar expression^ErrSwitchExpression RPAR^ErrSwitchRPar statement^ErrSwitchStatement
 
-    iterationStatement          <-      WHILE LPAR^ErrWhileLPar expression RPAR^ErrWhileRPar statement /
-                                        DO statement WHILE^ErrWhileLPar LPAR expression RPAR^ErrWhileRPar SEMI /
+    iterationStatement          <-      WHILE LPAR^ErrWhileLPar expression^ErrWhileExpression RPAR^ErrWhileRPar statement^ErrWhileStatement /
+                                        DO statement^ErrDoWhileStatement WHILE^ErrDoWhile LPAR^ErrDoWhileLPar expression^ErrDoWhileExpression RPAR^ErrDoWhileRPar SEMI^ErrDoWhileSemi /
                                         FOR LPAR^ErrForLPar expression? SEMI expression? SEMI expression? RPAR^ErrForRPar statement /
                                         FOR LPAR^ErrForLPar declaration expression? SEMI expression? RPAR^ErrForRPar statement
 
-    jumpStatement               <-      GOTO Identifier SEMI /
-                                        CONTINUE SEMI /
-                                        BREAK SEMI / 
-                                        RETURN expression? SEMI                                                                                
+    jumpStatement               <-      GOTO Identifier^ErrGotoId SEMI^ErrGotoSemi /
+                                        CONTINUE SEMI^ErrContinueSemi /
+                                        BREAK SEMI^ErrBreakSemi / 
+                                        RETURN expression? SEMI^ErrReturnSemi                                                                                
 
     declaration                 <-      declarationSpecifiers initDeclaratorList? SEMI 
 
@@ -134,7 +130,7 @@ local parser = [[
 
     pointer                     <-      ( STAR typeQualifier* )+
 
-    directDeclarator            <-      ( Identifier / LPAR declarator RPAR )
+    directDeclarator            <-      ( Identifier / LPAR declarator RPAR ) 
                                         ( LBRK typeQualifier* assignmentExpression? RBRK
                                         / LBRK STATIC typeQualifier* assignmentExpression RBRK
                                         / LBRK typeQualifier+ STATIC assignmentExpression RBRK
@@ -150,10 +146,8 @@ local parser = [[
 
     parameterDeclaration        <-      declarationSpecifiers ( declarator / abstractDeclarator )? 
 
-    declarationSpecifiers       <-      (( storageClassSpecifier / typeQualifier / functionSpecifier )*
-                                        typedefName ( storageClassSpecifier / typeQualifier / functionSpecifier )*) /
-                                        ( storageClassSpecifier / typeSpecifier / typeQualifier /
-                                        functionSpecifier )+  
+    declarationSpecifiers       <-      (( storageClassSpecifier / typeQualifier / functionSpecifier )* typedefName ( storageClassSpecifier / typeQualifier / functionSpecifier )*) /
+                                        ( storageClassSpecifier / typeSpecifier / typeQualifier / functionSpecifier )+  
 
     abstractDeclarator          <-      pointer? directAbstractDeclarator / pointer 
     
@@ -181,7 +175,7 @@ local parser = [[
 
 -- Lexical Elements 
 
-    StringLiteral               <-      '"' (!'"' .)* '"' / "'" (!"'" .)* "'"
+    StringLiteral               <-      '"' (!'"' .)* '"' Spacing / "'" (!"'" .)* "'" Spacing
 
     EOF                         <-      !.
 
@@ -195,7 +189,7 @@ local parser = [[
 
 -- Identifiers 
 
-    Identifier                  <-      !Keyword IdNondigit IdChar*
+    Identifier                  <-      !Keyword IdNondigit IdChar* Spacing
 
     IdChar                      <-      [a-z] / [A-Z] / [0-9]
 
@@ -205,19 +199,19 @@ local parser = [[
 
     Constant                    <-      FloatConstant / IntegerConstant / EnumerationConstant / CharacterConstant
 
-    FloatConstant               <-      DecimalFloatConstant
+    FloatConstant               <-      DecimalFloatConstant Spacing
 
     DecimalFloatConstant        <-      Fraction / [0-9]+ 
 
     Fraction                    <-      [0-9]* "." [0-9]+ / [0-9]+ "."  
 
-    IntegerConstant             <-      DecimalConstant
+    IntegerConstant             <-      DecimalConstant Spacing
 
     DecimalConstant             <-      [1-9][0-9]*
 
     EnumerationConstant         <-      Identifier
 
-    CharacterConstant           <-      "L"? "'" Char* "'"
+    CharacterConstant           <-      "L"? "'" Char* "'" Spacing
 
     Char                        <-      [a-z] / [A-Z]
 
@@ -231,94 +225,94 @@ local parser = [[
                                         "__declspec" / "__attribute__" )  !IdChar
 
 
-    AUTO      <- "auto"     
-    BREAK     <- "break"    
-    CASE      <- "case"     
-    CHAR      <- "char"     
-    CONST     <- "const"    
-    CONTINUE  <- "continue" 
-    DEFAULT   <- "default"  
-    DOUBLE    <- "double"   
-    DO        <- "do"       
-    ELSE      <- "else"     
-    ENUM      <- "enum"     
-    EXTERN    <- "extern"   
-    FLOAT     <- "float"    
-    FOR       <- "for"      
-    GOTO      <- "goto"     
-    IF        <- "if"       
-    INT       <- "int"      
-    INLINE    <- "inline"   
-    LONG      <- "long"     
-    REGISTER  <- "register" 
-    RESTRICT  <- "restrict" 
-    RETURN    <- "return"   
-    SHORT     <- "short"    
-    SIGNED    <- "signed"   
-    SIZEOF    <- "sizeof"   
-    STATIC    <- "static"   
-    STRUCT    <- "struct"   
-    SWITCH    <- "switch"   
-    TYPEDEF   <- "typedef"  
-    UNION     <- "union"    
-    UNSIGNED  <- "unsigned" 
-    VOID      <- "void"     
-    VOLATILE  <- "volatile" 
-    WHILE     <- "while"    
-    BOOL      <- "_Bool"    
-    COMPLEX   <- "_Complex" 
-    STDCALL   <- "_stdcall" 
-    DECLSPEC  <- "__declspec"
-    ATTRIBUTE <- "__attribute__"
+    AUTO      <- "auto"             !IdChar Spacing 
+    BREAK     <- "break"            !IdChar Spacing 
+    CASE      <- "case"             !IdChar Spacing 
+    CHAR      <- "char"             !IdChar Spacing
+    CONST     <- "const"            !IdChar Spacing
+    CONTINUE  <- "continue"         !IdChar Spacing
+    DEFAULT   <- "default"          !IdChar Spacing
+    DOUBLE    <- "double"           !IdChar Spacing
+    DO        <- "do"               !IdChar Spacing
+    ELSE      <- "else"             !IdChar Spacing
+    ENUM      <- "enum"             !IdChar Spacing
+    EXTERN    <- "extern"           !IdChar Spacing
+    FLOAT     <- "float"            !IdChar Spacing
+    FOR       <- "for"              !IdChar Spacing
+    GOTO      <- "goto"             !IdChar Spacing
+    IF        <- "if"               !IdChar Spacing
+    INT       <- "int"              !IdChar Spacing
+    INLINE    <- "inline"           !IdChar Spacing
+    LONG      <- "long"             !IdChar Spacing
+    REGISTER  <- "register"         !IdChar Spacing
+    RESTRICT  <- "restrict"         !IdChar Spacing
+    RETURN    <- "return"           !IdChar Spacing
+    SHORT     <- "short"            !IdChar Spacing
+    SIGNED    <- "signed"           !IdChar Spacing
+    SIZEOF    <- "sizeof"           !IdChar Spacing
+    STATIC    <- "static"           !IdChar Spacing
+    STRUCT    <- "struct"           !IdChar Spacing
+    SWITCH    <- "switch"           !IdChar Spacing
+    TYPEDEF   <- "typedef"          !IdChar Spacing
+    UNION     <- "union"            !IdChar Spacing
+    UNSIGNED  <- "unsigned"         !IdChar Spacing
+    VOID      <- "void"             !IdChar Spacing
+    VOLATILE  <- "volatile"         !IdChar Spacing
+    WHILE     <- "while"            !IdChar Spacing
+    BOOL      <- "_Bool"            !IdChar Spacing
+    COMPLEX   <- "_Complex"         !IdChar Spacing
+    STDCALL   <- "_stdcall"         !IdChar Spacing
+    DECLSPEC  <- "__declspec"       !IdChar Spacing
+    ATTRIBUTE <- "__attribute__"    !IdChar Spacing
 
 -- Punctuators
 
-    LBRK       <-  "["         
-    RBRK       <-  "]"         
-    LPAR       <-  "("         
-    RPAR       <-  ")"         
-    LWING      <-  "{"         
-    RWING      <-  "}"         
-    DOT        <-  "."         
-    PTR        <-  "->"        
-    INC        <-  "++"        
-    DEC        <-  "--"        
-    AND        <-  "&"  !"&" 
-    STAR       <-  "*"  !"="   
-    PLUS       <-  "+"  !"+="  
-    MINUS      <-  "-"  !"\-=>"
-    TILDA      <-  "~"         
-    BANG       <-  "!"  !"="   
-    DIV        <-  "/"  !"="   
-    MOD        <-  "%"  !"=>"  
-    LEFT       <-  "<<" !"="   
-    RIGHT      <-  ">>" !"="   
-    LT         <-  "<"  !"="   
-    GT         <-  ">"  !"="   
-    LE         <-  "<="        
-    GE         <-  ">="        
-    EQUEQU     <-  "=="        
-    BANGEQU    <-  "!="        
-    HAT        <-  "^"  !"="   
-    OR         <-  "|"  !"="   
-    ANDAND     <-  "&&"        
-    OROR       <-  "||"        
-    QUERY      <-  "?"         
-    COLON      <-  ":"  !">"   
-    SEMI       <-  ";"         
-    ELLIPSIS   <-  "..."       
-    EQU        <-  "="  !"="   
-    STAREQU    <-  "*="        
-    DIVEQU     <-  "/="        
-    MODEQU     <-  "%="        
-    PLUSEQU    <-  "+="        
-    MINUSEQU   <-  "-="        
-    LEFTEQU    <-  "<<="       
-    RIGHTEQU   <-  ">>="       
-    ANDEQU     <-  "&="        
-    HATEQU     <-  "^="        
-    OREQU      <-  "|="        
-    COMMA      <-  ","         
+    LBRK       <-  "["              Spacing
+    RBRK       <-  "]"              Spacing
+    LPAR       <-  "("              Spacing
+    RPAR       <-  ")"              Spacing
+    LWING      <-  "{"              Spacing
+    RWING      <-  "}"              Spacing
+    DOT        <-  "."              Spacing
+    PTR        <-  "->"             Spacing
+    INC        <-  "++"             Spacing
+    DEC        <-  "--"             Spacing
+    AND        <-  "&"  !"&"        Spacing
+    STAR       <-  "*"  !"="        Spacing
+    PLUS       <-  "+"  !"+="       Spacing
+    MINUS      <-  "-"  !"\-=>"     Spacing
+    TILDA      <-  "~"              Spacing
+    BANG       <-  "!"  !"="        Spacing
+    DIV        <-  "/"  !"="        Spacing     
+    MOD        <-  "%"  !"=>"       Spacing
+    LEFT       <-  "<<" !"="        Spacing
+    RIGHT      <-  ">>" !"="        Spacing
+    LT         <-  "<"  !"="        Spacing
+    GT         <-  ">"  !"="        Spacing
+    LE         <-  "<="             Spacing
+    GE         <-  ">="             Spacing
+    EQUEQU     <-  "=="             Spacing
+    BANGEQU    <-  "!="             Spacing
+    HAT        <-  "^"  !"="        Spacing
+    OR         <-  "|"  !"="        Spacing
+    ANDAND     <-  "&&"             Spacing
+    OROR       <-  "||"             Spacing
+    QUERY      <-  "?"              Spacing
+    COLON      <-  ":"  !">"        Spacing
+    SEMI       <-  ";"              Spacing
+    ELLIPSIS   <-  "..."            Spacing
+    EQU        <-  "="  !"="        Spacing
+    STAREQU    <-  "*="             Spacing
+    DIVEQU     <-  "/="             Spacing
+    MODEQU     <-  "%="             Spacing
+    PLUSEQU    <-  "+="             Spacing
+    MINUSEQU   <-  "-="             Spacing
+    LEFTEQU    <-  "<<="            Spacing
+    RIGHTEQU   <-  ">>="            Spacing
+    ANDEQU     <-  "&="             Spacing
+    HATEQU     <-  "^="             Spacing
+    OREQU      <-  "|="             Spacing
+    COMMA      <-  ","              Spacing
 
     EOT        <-  !.                                                                          
 

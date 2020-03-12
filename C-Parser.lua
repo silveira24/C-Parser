@@ -31,8 +31,8 @@ local parser = [[
 
     iterationStatement          <-      WHILE LPAR^ErrWhileLPar expression^ErrWhileExpression RPAR^ErrWhileRPar statement^ErrWhileStatement /
                                         DO statement^ErrDoWhileStatement WHILE^ErrDoWhile LPAR^ErrDoWhileLPar expression^ErrDoWhileExpression RPAR^ErrDoWhileRPar SEMI^ErrDoWhileSemi /
-                                        FOR LPAR^ErrForLPar expression? SEMI expression? SEMI expression? RPAR^ErrForRPar statement /
-                                        FOR LPAR^ErrForLPar declaration expression? SEMI expression? RPAR^ErrForRPar statement
+                                        FOR LPAR^ErrForLPar expression? SEMI expression? SEMI^ErrForSemi expression? RPAR^ErrForRPar statement^ErrForStatement /
+                                        FOR LPAR^ErrForLPar declaration^ErrForDeclaration expression? SEMI^ErrForSemi expression? RPAR^ErrForRPar statement^ErrForStatement
 
     jumpStatement               <-      GOTO Identifier^ErrGotoId SEMI^ErrGotoSemi /
                                         CONTINUE SEMI^ErrContinueSemi /
@@ -41,56 +41,56 @@ local parser = [[
 
     declaration                 <-      declarationSpecifiers initDeclaratorList? SEMI 
 
-    initDeclaratorList          <-      initDeclarator ( COMMA initDeclarator )*
+    initDeclaratorList          <-      initDeclarator ( COMMA initDeclarator^ErrInitDeclarator )*
 
-    initDeclarator              <-      declarator ( EQU initializer )?                                     
+    initDeclarator              <-      declarator ( EQU initializer^ErrInitDeclaratorInitializer )?                                     
 
     constantExpression          <-      conditionalExpression
 
-    conditionalExpression       <-      logicalORExpression (QUERY expression COLON logicalORExpression)*
+    conditionalExpression       <-      logicalORExpression (QUERY expression^ErrConditionalExpression COLON^ErrConditionalExpressionColon logicalORExpression^ErrConditionalExpressionLogicalOR)*
 
-    logicalORExpression         <-      logicalANDExpression (OROR logicalANDExpression)*
+    logicalORExpression         <-      logicalANDExpression (OROR logicalANDExpression^ErrLogicalORExpression)*
 
-    logicalANDExpression        <-      inclusiveORExpression (ANDAND inclusiveORExpression)*
+    logicalANDExpression        <-      inclusiveORExpression (ANDAND inclusiveORExpression^ErrLogicalANDExpression)*
 
-    inclusiveORExpression       <-      exclusiveORExpression (OR exclusiveORExpression)*
+    inclusiveORExpression       <-      exclusiveORExpression (OR exclusiveORExpression^ErrInclusiveORExpression)*
 
-    exclusiveORExpression       <-      andExpression (HAT andExpression)*
+    exclusiveORExpression       <-      andExpression (HAT andExpression^ErrExclusiveORExpression)*
 
-    andExpression               <-      equalityExpression (AND equalityExpression)*
+    andExpression               <-      equalityExpression (AND equalityExpression^ErrAndExpression)*
 
-    equalityExpression          <-      relationalExpression ((EQUEQU / BANGEQU) relationalExpression)*
+    equalityExpression          <-      relationalExpression ((EQUEQU / BANGEQU) relationalExpression^ErrEqualityExpression)*
 
-    relationalExpression        <-      shiftExpression ((LE / GE / LT / GT) shiftExpression)*
+    relationalExpression        <-      shiftExpression ((LE / GE / LT / GT) shiftExpression^ErrRelationalExpression)*
 
-    shiftExpression             <-      additiveExpression ((LEFT / RIGHT) additiveExpression)*
+    shiftExpression             <-      additiveExpression ((LEFT / RIGHT) additiveExpression^ErrShiftExpression)*
 
-    additiveExpression          <-      multiplicativeExpression ((PLUS / MINUS) multiplicativeExpression)*
+    additiveExpression          <-      multiplicativeExpression ((PLUS / MINUS) multiplicativeExpression^ErrAdditiveExpression)*
 
-    multiplicativeExpression    <-      castExpression ((STAR / DIV / MOD) castExpression)*
+    multiplicativeExpression    <-      castExpression ((STAR / DIV / MOD) castExpression^ErrMultiplicativeExpression)*
 
     castExpression              <-      (LPAR typeName RPAR)* unaryExpression
 
     unaryExpression             <-      postfixExpression /
                                         INC unaryExpression /
                                         DEC unaryExpression /
-                                        unaryOperator castExpression /
-                                        SIZEOF (unaryExpression / LPAR typeName RPAR )
+                                        unaryOperator castExpression^ErrUnaryExpressionCast /
+                                        SIZEOF (unaryExpression / LPAR^ErrSizeofLPar typeName^ErrSizeofTypeName RPAR^ErrSizeofRPar )
 
     unaryOperator               <-      AND / STAR / PLUS / MINUS / TILDA / BANG                                        
 
     postfixExpression           <-      ( primaryExpression /
-                                        LPAR typeName RPAR LWING initializerList COMMA? RWING )
-                                        ( LBRK expression RBRK /
-                                        LPAR argumentExpressionList? RPAR /
-                                        DOT Identifier /
-                                        PTR Identifier /
+                                        LPAR typeName RPAR LWING initializerList^ErrPostFixExpressionInitialiazer COMMA? RWING^ErrPostFixExpressionRWing )
+                                        ( LBRK expression^ErrPostFixExpression RBRK^ErrPostFixExpressionRBrk /
+                                        LPAR argumentExpressionList? RPAR^ErrPostFixExpressionRPar /
+                                        DOT Identifier^ErrPostFixExpressionDotIdentifier /
+                                        PTR Identifier^ErrPostFixExpressionPtrIdentifier /
                                         INC /
                                         DEC )*
 
     typeName                    <-      specifierQualifierList abstractDeclarator?
 
-    initializerList             <-      designation? initializer (COMMA designation? initializer)*
+    initializerList             <-      designation? initializer^ErrInitializerListInitializer (COMMA designation? initializer^ErrInitializerListInitializer)*
 
     designation                 <-      designator+ EQU
 

@@ -90,7 +90,7 @@ local parser = [[
 
     typeName                    <-      specifierQualifierList abstractDeclarator?
 
-    initializerList             <-      designation? initializer^ErrInitializerListInitializer (COMMA designation? initializer)*
+    initializerList             <-      designation? initializer (COMMA designation? initializer)*
 
     designation                 <-      designator+ EQU
 
@@ -213,7 +213,7 @@ local parser = [[
 
     CharacterConstant           <-      "L"? "'" Char* "'"^ErrChar Spacing
 
-    Char                        <-      [a-z] / [A-Z]
+    Char                        <-      [a-z] / [A-Z] / !"'" .
 
 --Keywords
 

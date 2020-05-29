@@ -114,7 +114,7 @@ local parser = [[
 
     enumSpecifier               <-      ENUM ( Identifier? LWING enumeratorList^ErrEnumSpecifierEnumeratorList COMMA? RWING^ErrEnumSpecifierRWing / Identifier^ErrEnumSpecifierIdentifier )
 
-    enumeratorList              <-      enumerator^ErrEnumeratorList (COMMA enumerator)*
+    enumeratorList              <-      enumerator (COMMA enumerator)*
 
     enumerator                  <-      EnumerationConstant (EQU constantExpression^ErrEnumeratorConstantExpression)?  
 

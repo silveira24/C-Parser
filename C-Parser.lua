@@ -74,7 +74,7 @@ local parser = [[
     unaryExpression             <-      postfixExpression /
                                         INC unaryExpression /
                                         DEC unaryExpression /
-                                        unaryOperator castExpression^ErrUnaryExpressionCast /
+                                        unaryOperator castExpression /
                                         SIZEOF (unaryExpression / LPAR^ErrSizeofLPar typeName^ErrSizeofTypeName RPAR^ErrSizeofRPar )
 
     unaryOperator               <-      AND / STAR / PLUS / MINUS / TILDA / BANG                                        

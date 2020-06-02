@@ -110,7 +110,7 @@ local parser = [[
     typeSpecifier               <-      VOID / CHAR / SHORT / INT / LONG / FLOAT / DOUBLE / SIGNED / UNSIGNED /
                                         BOOL / COMPLEX / structOrUnionSpecifier / enumSpecifier
 
-    structOrUnionSpecifier      <-      structOrUnion ( Identifier? LWING structDeclaration+^ErrStructOrUnionSpecifierStructDeclaration RWING^ErrStructOrUnionSpecifierRWing / Identifier^ErrStructOrUnionSpecifierIdentifier ) 
+    structOrUnionSpecifier      <-      structOrUnion ( Identifier? LWING structDeclaration+^ErrStructOrUnionSpecifierStructDeclaration  RWING^ErrStructOrUnionSpecifierRWing / Identifier^ErrStructOrUnionSpecifierIdentifier ) 
 
     enumSpecifier               <-      ENUM ( Identifier? LWING enumeratorList^ErrEnumSpecifierEnumeratorList COMMA? RWING^ErrEnumSpecifierRWing / Identifier^ErrEnumSpecifierIdentifier )
 
@@ -122,9 +122,9 @@ local parser = [[
 
     structDeclaration           <-      specifierQualifierList structDeclaratorList^ErrStructDeclarationStructDeclaratorList SEMI^ErrStructDeclarationSemi
 
-    structDeclaratorList        <-      structDeclarator^ErrStructDeclarationList (COMMA structDeclarator^ErrStructDeclarationListAfterComma)*
+    structDeclaratorList        <-      structDeclarator (COMMA structDeclarator^ErrStructDeclarationListAfterComma)*
 
-    structDeclarator            <-      declarator? COLON constantExpression / declarator^ErrStructDeclarator     
+    structDeclarator            <-      declarator? COLON constantExpression / declarator     
 
     declarator                  <-      pointer? directDeclarator
 

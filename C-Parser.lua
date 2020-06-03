@@ -135,10 +135,10 @@ local parser = [[
                                         / LBRK STATIC typeQualifier* assignmentExpression^ErrDirectDeclaratorAssignmentExpression RBRK^ErrDirectDeclaratorRBrk
                                         / LBRK typeQualifier+ STATIC assignmentExpression^ErrDirectDeclaratorAssignmentExpression RBRK^ErrDirectDeclaratorRBrk
                                         / LBRK typeQualifier* STAR RBRK^ErrDirectDeclaratorRBrk
-                                        / LPAR parameterTypeList RPAR^ErrDirectDeclaratorRPar
+                                        / LPAR parameterTypeList RPAR
                                         / LPAR identifierList? RPAR^ErrDirectDeclaratorRPar )* 
 
-    parameterTypeList           <-      parameterList (COMMA ELLIPSIS^ErrParameterTypeListEllipses)?  
+    parameterTypeList           <-      parameterList (COMMA ELLIPSIS)?  
 
     identifierList              <-      Identifier (COMMA Identifier^ErrIdentifierListIdentifier)*  
 

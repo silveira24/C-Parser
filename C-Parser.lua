@@ -175,7 +175,7 @@ local parser = [[
 
 -- Lexical Elements 
 
-    StringLiteral               <-      '"' (!'"' .)* '"'^ErrStringLiteralDouble Spacing / "'" (!"'" .)* "'"^ErrStringLiteralSimple Spacing
+    StringLiteral               <-      '"' (!'"' .)* '"'^ErrStringLiteral Spacing
 
     Spacing                     <-      ( LongComment / LineComment / Pragma / %nl)*
 

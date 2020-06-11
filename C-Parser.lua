@@ -7,7 +7,7 @@ local parser = [[
 
 -- EXTERNAL DEFINITIONS 
     
-    translationUnit             <-      Spacing externalDeclaration+ EOT^ErrEOT
+    translationUnit             <-      Spacing externalDeclaration+ EOT
 
     externalDeclaration         <-      functionDefinition / declaration 
 
@@ -18,56 +18,56 @@ local parser = [[
     statement                    <-      labeledStatement / compoundStatemet / expressionStatement / selectionStatement /
                                         iterationStatement / jumpStatement
 
-    labeledStatement            <-      Identifier COLON statement^ErrLabeledStatement / 
-                                        CASE constantExpression^ErrCaseExpression COLON^ErrCaseColon statement^ErrCaseStatement /
-                                        DEFAULT COLON^ErrDefaultColon statement^ErrDefaultStatement
+    labeledStatement            <-      Identifier COLON statement / 
+                                        CASE constantExpression COLON statement /
+                                        DEFAULT COLON statement
 
-    compoundStatemet            <-      LWING ( declaration / statement )* RWING^ErrCompoundRWing
+    compoundStatemet            <-      LWING ( declaration / statement )* RWING
 
     expressionStatement         <-      expression? SEMI
 
-    selectionStatement          <-      IF LPAR^ErrIfLPar expression^ErrIfExpression RPAR^ErrIfRPar statement^ErrIfStatement ( ELSE statement^ErrElseStatement)? /
-                                        SWITCH LPAR^ErrSwitchLPar expression^ErrSwitchExpression RPAR^ErrSwitchRPar statement^ErrSwitchStatement
+    selectionStatement          <-      IF LPAR expression RPAR statement ( ELSE statement)? /
+                                        SWITCH LPAR expression RPAR statement
 
-    iterationStatement          <-      WHILE LPAR^ErrWhileLPar expression^ErrWhileExpression RPAR^ErrWhileRPar statement^ErrWhileStatement /
-                                        DO statement^ErrDoWhileStatement WHILE^ErrDoWhile LPAR^ErrDoWhileLPar expression^ErrDoWhileExpression RPAR^ErrDoWhileRPar SEMI^ErrDoWhileSemi /
-                                        FOR LPAR^ErrForLPar expression? SEMI expression? SEMI^ErrForSemi expression? RPAR^ErrForRPar statement^ErrForStatement /
-                                        FOR LPAR^ErrForLPar declaration^ErrForDeclaration expression? SEMI^ErrForSemi expression? RPAR^ErrForRPar statement^ErrForStatement
+    iterationStatement          <-      WHILE LPAR expression RPAR statement /
+                                        DO statement WHILE LPAR expression RPAR SEMI /
+                                        FOR LPAR expression? SEMI expression? SEMI expression? RPAR statement /
+                                        FOR LPAR declaration expression? SEMI expression? RPAR statement
 
-    jumpStatement               <-      GOTO Identifier^ErrGotoId SEMI^ErrGotoSemi /
-                                        CONTINUE SEMI^ErrContinueSemi /
-                                        BREAK SEMI^ErrBreakSemi / 
-                                        RETURN expression? SEMI^ErrReturnSemi                                                                                
+    jumpStatement               <-      GOTO Identifier SEMI /
+                                        CONTINUE SEMI /
+                                        BREAK SEMI / 
+                                        RETURN expression? SEMI                                                                                
 
     declaration                 <-      declarationSpecifiers initDeclaratorList? SEMI 
 
-    initDeclaratorList          <-      initDeclarator ( COMMA initDeclarator^ErrInitDeclarator )*
+    initDeclaratorList          <-      initDeclarator ( COMMA initDeclarator )*
 
-    initDeclarator              <-      declarator ( EQU initializer^ErrInitDeclaratorInitializer )?                                     
+    initDeclarator              <-      declarator ( EQU initializer )?                                     
 
     constantExpression          <-      conditionalExpression
 
-    conditionalExpression       <-      logicalORExpression (QUERY expression^ErrConditionalExpression COLON^ErrConditionalExpressionColon logicalORExpression^ErrConditionalExpressionLogicalOR)*
+    conditionalExpression       <-      logicalORExpression (QUERY expression COLON logicalORExpression)*
 
-    logicalORExpression         <-      logicalANDExpression (OROR logicalANDExpression^ErrLogicalORExpression)*
+    logicalORExpression         <-      logicalANDExpression (OROR logicalANDExpression)*
 
-    logicalANDExpression        <-      inclusiveORExpression (ANDAND inclusiveORExpression^ErrLogicalANDExpression)*
+    logicalANDExpression        <-      inclusiveORExpression (ANDAND inclusiveORExpression)*
 
-    inclusiveORExpression       <-      exclusiveORExpression (OR exclusiveORExpression^ErrInclusiveORExpression)*
+    inclusiveORExpression       <-      exclusiveORExpression (OR exclusiveORExpression)*
 
-    exclusiveORExpression       <-      andExpression (HAT andExpression^ErrExclusiveORExpression)*
+    exclusiveORExpression       <-      andExpression (HAT andExpression)*
 
-    andExpression               <-      equalityExpression (AND equalityExpression^ErrAndExpression)*
+    andExpression               <-      equalityExpression (AND equalityExpression)*
 
-    equalityExpression          <-      relationalExpression ((EQUEQU / BANGEQU) relationalExpression^ErrEqualityExpression)*
+    equalityExpression          <-      relationalExpression ((EQUEQU / BANGEQU) relationalExpression)*
 
-    relationalExpression        <-      shiftExpression ((LE / GE / LT / GT) shiftExpression^ErrRelationalExpression)*
+    relationalExpression        <-      shiftExpression ((LE / GE / LT / GT) shiftExpression)*
 
-    shiftExpression             <-      additiveExpression ((LEFT / RIGHT) additiveExpression^ErrShiftExpression)*
+    shiftExpression             <-      additiveExpression ((LEFT / RIGHT) additiveExpression)*
 
-    additiveExpression          <-      multiplicativeExpression ((PLUS / MINUS) multiplicativeExpression^ErrAdditiveExpression)*
+    additiveExpression          <-      multiplicativeExpression ((PLUS / MINUS) multiplicativeExpression)*
 
-    multiplicativeExpression    <-      castExpression ((STAR / DIV / MOD) castExpression^ErrMultiplicativeExpression)*
+    multiplicativeExpression    <-      castExpression ((STAR / DIV / MOD) castExpression)*
 
     castExpression              <-      (LPAR typeName RPAR)* unaryExpression
 
@@ -75,16 +75,16 @@ local parser = [[
                                         INC unaryExpression /
                                         DEC unaryExpression /
                                         unaryOperator castExpression /
-                                        SIZEOF (unaryExpression / LPAR^ErrSizeofLPar typeName^ErrSizeofTypeName RPAR^ErrSizeofRPar )
+                                        SIZEOF (unaryExpression / LPAR typeName RPAR )
 
     unaryOperator               <-      AND / STAR / PLUS / MINUS / TILDA / BANG                                        
 
     postfixExpression           <-      ( primaryExpression /
-                                        LPAR typeName RPAR LWING initializerList^ErrPostFixExpressionInitialiazer COMMA? RWING^ErrPostFixExpressionRWing )
-                                        ( LBRK expression^ErrPostFixExpression RBRK^ErrPostFixExpressionRBrk /
-                                        LPAR argumentExpressionList? RPAR^ErrPostFixExpressionRPar /
-                                        DOT Identifier^ErrPostFixExpressionDotIdentifier /
-                                        PTR Identifier^ErrPostFixExpressionPtrIdentifier /
+                                        LPAR typeName RPAR LWING initializerList COMMA? RWING )
+                                        ( LBRK expression RBRK /
+                                        LPAR argumentExpressionList? RPAR /
+                                        DOT Identifier /
+                                        PTR Identifier /
                                         INC /
                                         DEC )*
 
@@ -96,33 +96,33 @@ local parser = [[
 
     designator                  <-      LBRK constantExpression RBRK / DOT Identifier
 
-    initializer                 <-      assignmentExpression / LWING initializerList^ErrInitializerInitializerList COMMA? RWING^ErrInitializerRWing
+    initializer                 <-      assignmentExpression / LWING initializerList COMMA? RWING
 
-    argumentExpressionList      <-      assignmentExpression (COMMA assignmentExpression^ErrArgumentExpressionListAssignmentExpression)*
+    argumentExpressionList      <-      assignmentExpression (COMMA assignmentExpression)*
 
     specifierQualifierList      <-      ( typeQualifier* typedefName typeQualifier* ) / 
                                         ( typeSpecifier / typeQualifier )+
 
-    typeQualifier               <-      CONST / RESTRICT / VOLATILE / DECLSPEC LPAR^ErrDeclspecLPar Identifier^ErrDeclspecIdentifier RPAR^ErrDeclspecRPar 
+    typeQualifier               <-      CONST / RESTRICT / VOLATILE / DECLSPEC LPAR Identifier RPAR 
 
     typedefName                 <-      Identifier
 
     typeSpecifier               <-      VOID / CHAR / SHORT / INT / LONG / FLOAT / DOUBLE / SIGNED / UNSIGNED /
                                         BOOL / COMPLEX / structOrUnionSpecifier / enumSpecifier
 
-    structOrUnionSpecifier      <-      structOrUnion ( Identifier? LWING structDeclaration+^ErrStructOrUnionSpecifierStructDeclaration  RWING^ErrStructOrUnionSpecifierRWing / Identifier^ErrStructOrUnionSpecifierIdentifier ) 
+    structOrUnionSpecifier      <-      structOrUnion ( Identifier? LWING structDeclaration+  RWING / Identifier ) 
 
-    enumSpecifier               <-      ENUM ( Identifier? LWING enumeratorList^ErrEnumSpecifierEnumeratorList COMMA? RWING^ErrEnumSpecifierRWing / Identifier^ErrEnumSpecifierIdentifier )
+    enumSpecifier               <-      ENUM ( Identifier? LWING enumeratorList COMMA? RWING / Identifier )
 
     enumeratorList              <-      enumerator (COMMA enumerator)*
 
-    enumerator                  <-      EnumerationConstant (EQU constantExpression^ErrEnumeratorConstantExpression)?  
+    enumerator                  <-      EnumerationConstant (EQU constantExpression)?  
 
     structOrUnion               <-      STRUCT / UNION 
 
-    structDeclaration           <-      specifierQualifierList structDeclaratorList^ErrStructDeclarationStructDeclaratorList SEMI^ErrStructDeclarationSemi
+    structDeclaration           <-      specifierQualifierList structDeclaratorList SEMI
 
-    structDeclaratorList        <-      structDeclarator (COMMA structDeclarator^ErrStructDeclarationListAfterComma)*
+    structDeclaratorList        <-      structDeclarator (COMMA structDeclarator)*
 
     structDeclarator            <-      declarator? COLON constantExpression / declarator     
 
@@ -132,15 +132,15 @@ local parser = [[
 
     directDeclarator            <-      ( Identifier / LPAR declarator RPAR) 
                                         ( LBRK typeQualifier* assignmentExpression? RBRK
-                                        / LBRK STATIC typeQualifier* assignmentExpression^ErrDirectDeclaratorAssignmentExpression RBRK^ErrDirectDeclaratorRBrk
-                                        / LBRK typeQualifier+ STATIC assignmentExpression^ErrDirectDeclaratorAssignmentExpression RBRK^ErrDirectDeclaratorRBrk
-                                        / LBRK typeQualifier* STAR RBRK^ErrDirectDeclaratorRBrk
+                                        / LBRK STATIC typeQualifier* assignmentExpression RBRK
+                                        / LBRK typeQualifier+ STATIC assignmentExpression RBRK
+                                        / LBRK typeQualifier* STAR RBRK
                                         / LPAR parameterTypeList RPAR
-                                        / LPAR identifierList? RPAR^ErrDirectDeclaratorRPar )* 
+                                        / LPAR identifierList? RPAR )* 
 
     parameterTypeList           <-      parameterList (COMMA ELLIPSIS)?  
 
-    identifierList              <-      Identifier (COMMA Identifier^ErrIdentifierListIdentifier)*  
+    identifierList              <-      Identifier (COMMA Identifier)*  
 
     parameterList               <-      parameterDeclaration (COMMA parameterDeclaration)*
 
@@ -151,22 +151,22 @@ local parser = [[
 
     abstractDeclarator          <-      pointer? directAbstractDeclarator / pointer
     
-    directAbstractDeclarator    <-      ( LPAR abstractDeclarator RPAR^ErrDirectAbstractDeclarationRPar /
-                                        LBRK (assignmentExpression / STAR)? RBRK^ErrDirectAbstractDeclarationRBrk /
-                                        LPAR parameterTypeList? RPAR^ErrDirectAbstractDeclarationRPar )
-                                        ( LBRK (assignmentExpression / STAR)? RBRK^ErrDirectAbstractDeclarationRBrk
-                                        / LPAR parameterTypeList? RPAR^ErrDirectAbstractDeclarationRPar )*                                         
+    directAbstractDeclarator    <-      ( LPAR abstractDeclarator RPAR /
+                                        LBRK (assignmentExpression / STAR)? RBRK /
+                                        LPAR parameterTypeList? RPAR )
+                                        ( LBRK (assignmentExpression / STAR)? RBRK
+                                        / LPAR parameterTypeList? RPAR )*                                         
 
     storageClassSpecifier       <-      TYPEDEF / EXTERN / STATIC / AUTO / REGISTER /
-                                        ATTRIBUTE LPAR^ErrAttributeLPar LPAR^ErrAttributeLPar (!RPAR .)* RPAR RPAR^ErrAttributeRPar     
+                                        ATTRIBUTE LPAR LPAR (!RPAR .)* RPAR RPAR     
 
     functionSpecifier           <-      INLINE / STDCALL                                                                                                          
 
-    primaryExpression           <-      Identifier / Constant / StringLiteral / LPAR expression RPAR^ErrPrimatyExpressionRPar
+    primaryExpression           <-      Identifier / Constant / StringLiteral / LPAR expression RPAR
 
     expression                  <-      assignmentExpression (COMMA assignmentExpression)*
 
-    assignmentExpression        <-      unaryExpression assignmentOperator assignmentExpression^ErrAssignmentExpression / conditionalExpression
+    assignmentExpression        <-      unaryExpression assignmentOperator assignmentExpression / conditionalExpression
 
     assignmentOperator          <-      EQU / STAREQU / DIVEQU / MODEQU / PLUSEQU / MINUSEQU / LEFTEQU /
                                         RIGHTEQU / ANDEQU / HATEQU / OREQU
@@ -175,7 +175,7 @@ local parser = [[
 
 -- Lexical Elements 
 
-    StringLiteral               <-      '"' (!'"' .)* '"'^ErrStringLiteral Spacing
+    StringLiteral               <-      '"' (!'"' .)* '"' Spacing
 
     Spacing                     <-      ( LongComment / LineComment / Pragma / %nl)*
 
@@ -211,7 +211,7 @@ local parser = [[
 
     EnumerationConstant         <-      Identifier
 
-    CharacterConstant           <-      "L"? "'" Char* "'"^ErrChar Spacing
+    CharacterConstant           <-      "L"? "'" Char* "'" Spacing
 
     Char                        <-      [a-z] / [A-Z] / !"'" .
 
@@ -336,4 +336,4 @@ util.testNo(dir, 'c', p)
 
 print("\nStrict")
 dir = lfs.currentdir() .. '/no-strict/'
-util.testNo(dir, 'c', p, 'strict')
+util.testNo(dir, 'c', p)

@@ -334,6 +334,5 @@ util.testYes(dir, 'c', p)
 dir = lfs.currentdir() .. '/no/'
 util.testNo(dir, 'c', p)
 
-print("\nStrict")
 dir = lfs.currentdir() .. '/no-strict/'
 util.testNo(dir, 'c', p)

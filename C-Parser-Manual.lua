@@ -158,7 +158,7 @@ local parser = [[
                                         / LPAR parameterTypeList? RPAR^ErrDirectAbstractDeclarationRPar )*                                         
 
     storageClassSpecifier       <-      TYPEDEF / EXTERN / STATIC / AUTO / REGISTER /
-                                        ATTRIBUTE LPAR^ErrAttributeLPar LPAR^ErrAttributeLPar (!RPAR .)* RPAR RPAR^ErrAttributeRPar     
+                                        ATTRIBUTE LPAR^ErrAttributeLPar LPAR^ErrAttributeLPar (!RPAR .)* RPAR^ErrAttributeRPar RPAR^ErrAttributeRPar     
 
     functionSpecifier           <-      INLINE / STDCALL                                                                                                          
 
